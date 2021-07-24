@@ -13,11 +13,9 @@ namespace UsersActivityEvaluationWebSite.Models
         public int UserID { get; set; }
 
         [Required]
-        [Timestamp]
         public DateTime DateRegistration { get; set; }
 
         [Required]
-        [Timestamp]
         public DateTime DateLastActivity { get; set; }
 
         public override string ToString() => JsonSerializer.Serialize<User>(this);

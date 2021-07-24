@@ -19,34 +19,28 @@ namespace UsersActivityEvaluationWebSite.Services
 
         public double GetRollingRetention(int days)
         {
-            using (UsersActivityContext context = new UsersActivityContext())
+            using UsersActivityContext context = new UsersActivityContext();
+            if ((context.Users != null) && (context.Users.Count() > 0))
             {
-                if ((context.Users != null) && (context.Users.Count() > 0)) {
-                    List<Models.User> users = context.Users.Where(user => (DateTime.Now - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList();
+                List<Models.User> users = context.Users.Where(user => (DateTime.Now - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList();
 
-                    int usersInstalled = users.Count;
-                    int usersRetained = users.Where(user => (user.DateLastActivity - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList().Count;
-                    return 100 * (Convert.ToDouble(usersRetained) / Convert.ToDouble(usersInstalled));
-                }
-                else return 0;
+                int usersInstalled = users.Count;
+                int usersRetained = users.Where(user => (user.DateLastActivity - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList().Count;
+                return 100 * (Convert.ToDouble(usersRetained) / Convert.ToDouble(usersInstalled));
             }
+            else return 0;
         }
 
-        public int[] GetHistogram()
+        public List<UserLifetime> GetHistogram()
         {
-            using (UsersActivityContext context = new UsersActivityContext())
+            using UsersActivityContext context = new UsersActivityContext();
+            List<Models.User> users = context.Users.ToList();
+            List<UserLifetime> usersLifetime = new List<UserLifetime>();
+            foreach(var user in users)
             {
-                List<Models.User> users = context.Users.ToList();
-                int[] lifetimeToNumberOfUsers = new int[Convert.ToUInt32(Math.Ceiling(users.Max(user => (user.DateLastActivity - user.DateRegistration).TotalDays))) + 1];
-                Array.Clear(lifetimeToNumberOfUsers, 0, lifetimeToNumberOfUsers.Length);
-                foreach(var user in users)
-                {
-                    lifetimeToNumberOfUsers[Convert.ToUInt32(Math.Ceiling((user.DateLastActivity - user.DateRegistration).TotalDays))]++;
-                }
-                return lifetimeToNumberOfUsers;
+                usersLifetime.Add(new UserLifetime(user.UserID, Convert.ToInt32(Math.Round((user.DateLastActivity - user.DateRegistration).TotalDays))));
             }
+            return usersLifetime;
         }
-
-
     }
 }

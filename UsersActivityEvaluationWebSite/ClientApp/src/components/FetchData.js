@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Chart } from "react-google-charts";
 
 export class FetchData extends Component {
   static displayName = FetchData.name;
@@ -11,6 +12,7 @@ export class FetchData extends Component {
       this.setDateRegistration = this.setDateRegistration.bind(this);
       this.setDateLastActivity = this.setDateLastActivity.bind(this);
       this.saveTable = this.saveTable.bind(this);
+      this.showHistogram = this.showHistogram.bind(this);
 
       this.state = {
           rows: [],
@@ -22,11 +24,14 @@ export class FetchData extends Component {
           editingId: null,
           editingDateRegistration: null,
           editingDateLastActivity: null,
+          displayRollingRetention: false,
+          displayHistogram: false,
+          histogramData: null,
       };
   }
 
     componentDidMount() {
-      this.setState({ rows: [{ UserID: "1", DateRegistration: "21/07/2021", DateLastActivity: "21/07/2021" }] });
+      this.setState({ rows: [{ UserID: "1", DateRegistration: "21.07.2021", DateLastActivity: "21.07.2021" }] });
     }
 
     addRow() {
@@ -34,7 +39,6 @@ export class FetchData extends Component {
             var rowsNew = this.state.rows;
             rowsNew.push({ UserID: "not set", DateRegistration: "", DateLastActivity: "" });
             this.setState({ rows: rowsNew });
-            console.log(this.state.rows);
         }
     }
 
@@ -56,7 +60,26 @@ export class FetchData extends Component {
     }
 
     saveTable() {
-        sendUsersTable(rows);
+        if (this.state.rows.find(row => row.UserID === null || row.UserID === "" ||
+            row.DateRegistration === null || row.DateRegistration === "" ||
+            row.DateLastActivity === null || row.DateLastActivity === "") === undefined) {
+
+            function toDate(dateStr) {
+                var parts = dateStr.split(".")
+                return new Date(parts[2], parts[1] - 1, parseInt(parts[0]) + 1)
+            }
+
+            this.sendUsersTable(JSON.stringify(this.state.rows.map(row => ({
+                UserID: row.UserID,
+                DateRegistration: (toDate(row.DateRegistration)).toISOString(),
+                DateLastActivity: (toDate(row.DateLastActivity)).toISOString(),
+            }))));
+        }
+    }
+
+    showHistogram() {
+        this.getLifetimeHistogram();
+        this.setState({ displayHistogram: true });
     }
 
 
@@ -67,6 +90,9 @@ export class FetchData extends Component {
             editingId,
             rows,
             inEditMode,
+            displayRollingRetention,
+            displayHistogram,
+            histogramData,
         } = this.state;
 
 
@@ -80,9 +106,11 @@ export class FetchData extends Component {
           this.setDateLastActivity(dateLastActivity);
       }
 
-      const onSave = ({ oldId, newId, dateRegistration, dateLastActivity }) => {
-          this.setState({ rows: rows.map(row => row.UserID == oldId ? ({ UserID: newId, DateRegistration: dateRegistration, DateLastActivity: dateLastActivity }) : row) });
-          onCancel();
+        const onSave = ({ oldId, newId, dateRegistration, dateLastActivity }) => {
+            if (!rows.find(row => row.UserID === newId && newId !== oldId)) {
+                this.setState({ rows: rows.map(row => row.UserID == oldId ? ({ UserID: newId, DateRegistration: dateRegistration, DateLastActivity: dateLastActivity }) : row) });
+            }
+            onCancel();
       }
 
       const onCancel = () => {
@@ -169,7 +197,35 @@ export class FetchData extends Component {
                       }
                     </tbody>
                 </table>
-      </div >);
+        </div >);
+
+        const usersLifetimeHistogram = histogramData && (
+            <Chart
+                width={'1000px'}
+                height={'500px'}
+                chartType="Histogram"
+                loader={<div>Loading Chart</div>}
+                data={histogramData}
+                options={{
+                    title: 'Lifetime of users, in days',
+                    legend: { position: 'none' },
+                    hAxis: {
+                        title: 'lifetime (days)',
+                        viewWindowMode: 'explicit',
+                    },
+                     vAxis: {
+                        title: 'number of users',
+                        viewWindowMode: 'explicit',
+                    },
+                    histogram: {
+                        bucketSize: 1,
+                        minValue: 0,
+                        maxValue: Math.max.apply(Math, histogramData.map(elem => elem.LifeTime)),
+                    }
+                }}
+                rootProps={{ 'data-testid': '1' }}
+            />
+            );
 
       let contents = this.state.loading
           ? <p><em>Loading...</em></p>
@@ -180,17 +236,36 @@ export class FetchData extends Component {
         <h1 id="tabelLabel" >Users Activity Evaluation</h1>
         <p>Fill the table with users data, then click on button Save.</p>
             {contents}
-            <button variant="primary" onClick={this.saveTable}>Save</button>{' '}
             <button onClick={this.addRow} variant="primary">Add row</button>{' '}
-
+            <button className={"btn-primary"} onClick={this.saveTable}>Save</button>{' '}
+            <button className={"btn-primary"} onClick={this.showHistogram}>{displayHistogram ? 'Refresh histogram' : 'Show histogram'}</button>{' '}
+            {displayHistogram && usersLifetimeHistogram}
       </div>
     );
   }
 
-    async sendUsersTable(rows) {
-  // async populateWeatherData() {
-    const response = await fetch('weatherforecast');
-    const data = await response.json();
-    this.setState({ forecasts: data, loading: false });
-  }
+    async sendUsersTable(tableContent) {
+        await fetch('users_table', {
+            method: 'post',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: tableContent
+        });
+    }
+    async getLifetimeHistogram() {
+        // const response = await fetch('api/users_table', { method: 'post', body: tableContent });
+        const response = await fetch('lifetime_histogram', {
+            method: 'get',
+            headers: {
+                'Accept': 'application/json',
+                //'Content-Type': 'application/json'
+            },
+        });
+        const data = await response.json();
+        const parsedData = JSON.parse(data);
+        console.log(parsedData);
+        this.setState({ histogramData: [["UserID", "Lifetime"], ...parsedData.map(element => [element.UserID.toString(), element.LifeTime])] }, () => console.log(this.state.histogramData));
+    }
 }

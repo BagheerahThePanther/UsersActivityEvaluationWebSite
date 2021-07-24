@@ -8,6 +8,8 @@ using Microsoft.Extensions.Hosting;
 
 using UsersActivityEvaluationWebSite.Data;
 using UsersActivityEvaluationWebSite.Services;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace UsersActivityEvaluationWebSite
 {
@@ -27,6 +29,11 @@ namespace UsersActivityEvaluationWebSite
             services.AddControllersWithViews();
             services.AddDbContext<UsersActivityContext>();
             services.AddTransient<ActivityEvaluationService>();
+            services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            });
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
