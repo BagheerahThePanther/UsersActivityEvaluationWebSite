@@ -13,6 +13,7 @@ export class FetchData extends Component {
       this.setDateLastActivity = this.setDateLastActivity.bind(this);
       this.saveTable = this.saveTable.bind(this);
       this.showHistogram = this.showHistogram.bind(this);
+      this.showRollingRetention = this.showRollingRetention.bind(this);
 
       this.state = {
           rows: [],
@@ -27,10 +28,12 @@ export class FetchData extends Component {
           displayRollingRetention: false,
           displayHistogram: false,
           histogramData: null,
+          rollingRetention: null,
       };
   }
 
     componentDidMount() {
+      this.getUsersData();
       this.setState({ rows: [{ UserID: "1", DateRegistration: "21.07.2021", DateLastActivity: "21.07.2021" }] });
     }
 
@@ -82,6 +85,11 @@ export class FetchData extends Component {
         this.setState({ displayHistogram: true });
     }
 
+    showRollingRetention() {
+        this.getRollingRetention(7);
+        this.setState({ displayRollingRetention: true });
+    }
+
 
     render() {
         const {
@@ -93,6 +101,7 @@ export class FetchData extends Component {
             displayRollingRetention,
             displayHistogram,
             histogramData,
+            rollingRetention,
         } = this.state;
 
 
@@ -121,7 +130,10 @@ export class FetchData extends Component {
           this.setUserId(null);
           this.setDateRegistration(null);
           this.setDateLastActivity(null);
-      }
+        }
+        const onDelete = ({ id }) => {
+            this.setState({ rows: rows.filter(row => row.UserID != id) });
+        }
 
 
 
@@ -168,27 +180,35 @@ export class FetchData extends Component {
                                       inEditMode.status && inEditMode.rowKey === row.UserID ? (
                                               <React.Fragment>
                                                   <button
-                                                  className={"btn-success"}
+                                                  className={"btn-table-save"}
                                                   onClick={() => onSave({ oldId: row.UserID, newId: editingId, dateRegistration: editingDateRegistration, dateLastActivity: editingDateLastActivity })}
                                                   >
-                                                      Save
+                                                  <span>Save</span>
                                             </button>
 
                                                   <button
-                                                      className={"btn-secondary"}
+                                                  className={"btn-table-edit"}
                                                       style={{ marginLeft: 8 }}
                                                       onClick={() => onCancel()}
                                                   >
-                                                      Cancel
+                                                  <span>Cancel</span>
                                             </button>
                                               </React.Fragment>
-                                          ) : (
+                                      ) : (
+                                              <React.Fragment>
                                               <button
-                                                  className={"btn-primary"}
+                                                  className={"btn-table-edit"}
                                                   onClick={() => onEdit({ id: row.UserID, dateRegistration: row.DateRegistration, dateLastActivity: row.DateLastActivity })}
                                               >
-                                                  Edit
-                                              </button>
+                                                  <span>Edit</span>
+                                                  </button>{' '}
+                                              <button
+                                                  className={"btn-table-delete"}
+                                                  onClick={() => onDelete({ id: row.UserID })}
+                                              >
+                                                  <span>Delete</span>
+                                                  </button>
+                                                  </React.Fragment>
                                           )
                                       }
                                   </td>
@@ -198,6 +218,11 @@ export class FetchData extends Component {
                     </tbody>
                 </table>
         </div >);
+
+
+        const rollingRetention7days = rollingRetention && (
+            <span>7 Day Rolling Retention is {rollingRetention.toFixed(0)}%</span>
+        );
 
         const usersLifetimeHistogram = histogramData && (
             <Chart
@@ -236,10 +261,12 @@ export class FetchData extends Component {
         <h1 id="tabelLabel" >Users Activity Evaluation</h1>
         <p>Fill the table with users data, then click on button Save.</p>
             {contents}
-            <button onClick={this.addRow} variant="primary">Add row</button>{' '}
-            <button className={"btn-primary"} onClick={this.saveTable}>Save</button>{' '}
-            <button className={"btn-primary"} onClick={this.showHistogram}>{displayHistogram ? 'Refresh histogram' : 'Show histogram'}</button>{' '}
-            {displayHistogram && usersLifetimeHistogram}
+            <button className={"btn-secondary"} onClick={this.addRow} ><span>Add row</span></button>{' '}
+            <button className={"btn-primary"} onClick={this.saveTable}><span>Save</span></button>{' '}
+            <button className={"btn-primary"} onClick={this.showRollingRetention}><span>Show Rolling Retention 7 day</span></button>{' '}
+            <button className={"btn-primary"} onClick={this.showHistogram}><span>{displayHistogram ? 'Refresh histogram' : 'Show histogram'}</span></button>{' '}
+            <div>{displayRollingRetention && rollingRetention7days}</div>
+            <div>{displayHistogram && usersLifetimeHistogram}</div>
       </div>
     );
   }
@@ -255,7 +282,6 @@ export class FetchData extends Component {
         });
     }
     async getLifetimeHistogram() {
-        // const response = await fetch('api/users_table', { method: 'post', body: tableContent });
         const response = await fetch('lifetime_histogram', {
             method: 'get',
             headers: {
@@ -267,5 +293,37 @@ export class FetchData extends Component {
         const parsedData = JSON.parse(data);
         console.log(parsedData);
         this.setState({ histogramData: [["UserID", "Lifetime"], ...parsedData.map(element => [element.UserID.toString(), element.LifeTime])] }, () => console.log(this.state.histogramData));
+    }
+    async getRollingRetention(daysNumber) {
+        const response = await fetch(`rolling_retention/${daysNumber}`, {
+            method: 'get',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+        const data = await response.json();
+        const parsedData = JSON.parse(data);
+        console.log(parsedData);
+        this.setState({ rollingRetention: parsedData });
+    }
+
+    async getUsersData() {
+        const response = await fetch('users_table', {
+            method: 'get',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+        });
+        const data = await response.json();
+        const parsedData = JSON.parse(data);
+        console.log(parsedData);
+        this.setState({
+            rows: parsedData.map(row => ({
+                UserID: row.UserID,
+                DateRegistration: row.DateRegistration,
+                DateLastActivity: row.DateLastActivity,
+            }))
+        });
     }
 }

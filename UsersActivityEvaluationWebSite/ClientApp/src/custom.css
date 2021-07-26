@@ -8,7 +8,117 @@ code {
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    background: #4A9DFF;
+    border: 1px solid #4A9DFF;
+    border-radius: 10px;
+    height: 38px;
+    color: white;
+}
+    .btn-primary > span {
+        margin: 11px 25px;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 16px;
+        line-height: 16px;
+        color: #FFFFFF;
+    }
+
+.btn-secondary {
+    color: #fff;
+    height: 38px;
+    border: 1px solid #6c757d;
+    background: #6c757d;
+    border-radius: 10px;
+    color: white;
+}
+    .btn-secondary > span {
+        margin: 11px 25px;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 16px;
+        line-height: 16px;
+        color: #FFFFFF;
+    }
+.btn-table-edit {
+    background: #FFFFFF;
+    border-radius: 5px;
+    border: 1px solid #808080;
+    height: 24px;
+}
+
+    .btn-table-edit > span {
+        font-style: normal;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 12px;
+        color: #505050;
+    }
+
+.btn-table-delete {
+    background: #f24448;
+    border-radius: 5px;
+    border: 1px solid #cb2428;
+    height: 24px;
+}
+
+    .btn-table-delete > span {
+        font-style: normal;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 12px;
+        color: white;
+    }
+
+.btn-table-save {
+    background: #28a745;
+    border-radius: 5px;
+    border: 1px solid #104f1f;
+    height: 24px;
+}
+
+    .btn-table-save > span {
+        font-style: normal;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 12px;
+        color: #FFFFFF;
+    }
+
+
+
+table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  border: 3px solid purple;
+}
+
+thead th:nth-child(1) {
+  width: 20%;
+}
+
+thead th:nth-child(2) {
+  width: 25%;
+}
+
+thead th:nth-child(3) {
+  width: 25%;
+}
+
+thead td:nth-child(4) {
+  width: 30%;
+  
+}
+
+.table td, tr {
+    padding: 12px;
+    margin: 0;
+    text-align:center;
+    vertical-align: middle;
+}
+
+
+tr{
+    height: 24px;
+    line-height: 1;
 }

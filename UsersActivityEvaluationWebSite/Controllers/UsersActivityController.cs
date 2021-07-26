@@ -36,6 +36,14 @@ namespace UsersActivityEvaluationWebSite.Controllers
             return JsonConvert.SerializeObject(ActivityEvaluationService.GetHistogram());
         }
 
+        [HttpGet("/users_table")]
+        public ActionResult<string> GetUsersTable()
+        {
+            using UsersActivityContext context = new UsersActivityContext();
+            List<User> rows = context.Users.ToList();
+            return Ok(JsonConvert.SerializeObject(rows.Select(row => new UsersTable(row.UserID, row.DateRegistration, row.DateLastActivity))));
+        }
+
         [HttpPost("/users_table")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -22,8 +22,8 @@ namespace UsersActivityEvaluationWebSite.Services
             using UsersActivityContext context = new UsersActivityContext();
             if ((context.Users != null) && (context.Users.Count() > 0))
             {
-                List<Models.User> users = context.Users.Where(user => (DateTime.Now - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList();
-
+                List<Models.User> users = context.Users.ToList();
+                users = users.Where(user => Convert.ToInt32(Math.Round((DateTime.Now - user.DateRegistration).TotalDays)) >= days).ToList();
                 int usersInstalled = users.Count;
                 int usersRetained = users.Where(user => (user.DateLastActivity - user.DateRegistration).TotalDays >= Convert.ToDouble(days)).ToList().Count;
                 return 100 * (Convert.ToDouble(usersRetained) / Convert.ToDouble(usersInstalled));
